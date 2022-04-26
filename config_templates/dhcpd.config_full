@@ -7,9 +7,9 @@ authoritative;
 #not authoritative;
 deny-bootp;
 log-facility local7;
-pid-file-name /var/run/dhcpd.pid;
-lease-file-name /var/lib/dhcpd/dhcpd.leases;
-ping-check;
+pid-file-name "/var/run/dhcpd.pid";
+lease-file-name "/var/lib/dhcpd/dhcpd.leases";
+ping-check true;
 
 
 #Global options valid for all networks and pool
@@ -57,7 +57,7 @@ option ntp-servers 1.2.3.4, 1.2.3.5;
 #option netbios-name-servers 192.168.1.4;
 #option dhcp-client-identifier "pc_id";
 #option interface-mtu 1500;
-#option ip-forwarding;
+#option ip-forwarding true;
 #option user-class "myUserclass";
 #option vendor-class-identifier "myVendor";
 #next-server 192.168.1.1;
@@ -73,27 +73,27 @@ option ntp-servers 1.2.3.4, 1.2.3.5;
 
 # Simple subnet
 	subnet 192.168.0.0 netmask 255.255.255.0 {
-		range 192.168.0.128 - 192.168.0.150;
+		range 192.168.0.128 192.168.0.150;
 		option subnet-mask 255.255.255.0;
 		option broadcast-address 192.168.0.255
 		option routers 192.168.0.1;
-		option domain-name lan.net;
+		option domain-name "lan.net";
 		option domain-name-servers 8.8.8.8;
-		option domain-search packets.lab boxes.net;
+		option domain-search "packets.lab", "boxes.net";
 	}
 
 # Shared networks on a single interface
 	
 	shared-network lan_networks {
 		subnet 172.16.0.0 netmask 255.255.255.0 {
-			range 172.16.0.100 - 172.16.0.200;
+			range 172.16.0.100 172.16.0.200;
 			option subnet-mask 255.255.255.0;
 			option routers 172.16.0.1;
 			allow unknown-clients;
 			
 		}
 		subnet 172.16.1.0 netmask 255.255.255.0 {
-			range 172.16.1.100 - 172.16.1.200;
+			range 172.16.1.100 172.16.1.200;
 			option subnet-mask 255.255.255.0;
 			option routers 172.16.1.1;
 			deny unknown-clients;
@@ -128,12 +128,12 @@ option ntp-servers 1.2.3.4, 1.2.3.5;
 #
 	shared-network pooled_networks {
 		subnet 10.10.0.0 netmask 255.255.255.0 {
-			option domain-name-servers 8.8.8.8 8.8.4.4;
+			option domain-name-servers 8.8.8.8, 8.8.4.4;
 		}
 
 		pool red_team {
-			range 10.10.1.10 - 10.10.1.100;
-			option routers 10.10.1.1 10.10.1.2;
+			range 10.10.1.10 10.10.1.100;
+			option routers 10.10.1.1, 10.10.1.2;
 			option subnet-mask 255.255.255.0;
 			option domain-name red_team.lab;
 			allow members of "red_ream";
@@ -141,10 +141,10 @@ option ntp-servers 1.2.3.4, 1.2.3.5;
 		}
 
 		pool blue_team {
-			range 10.10.2.10 - 10.10.2.100
-			option routers 10.10.2.1 10.10.2.2;
+			range 10.10.2.10 10.10.2.100
+			option routers 10.10.2.1, 10.10.2.2;
 			option subnet-mask 255.255.255.0;
-			option domain-name bule_team.lab;
+			option domain-name blue_team.lab;
 			allow members of "blue_team";
 			deny members of "red_team";
 		}	
