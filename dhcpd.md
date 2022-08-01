@@ -1,55 +1,68 @@
 # ISC DCHPD Server Thoughts
 
+![Postal Boxes](./img/sherzod_max.jpg)
 
-DHCPD uses mainly two files:
+Photo by [Sherzod Max](https://unsplash.com/@sherzodmax?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText "Sherzod Max") on [Unsplash](https://unsplash.com/s/photos/address?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText)
+  
+
+DHCPD uses mainly two configuration files, both of which can be configured at runtime:
 
 - The configuration file */etc/dhcp/dhcpd.conf*  
-- The lease database file */var/lib/dhcpd/dhcpd.leases*  
+- The lease database file */var/lib/dhcp/dhcpd.leases*  
 
 The configuration file uses two types of statements that can be:  
 
 - declarations
 - parameters
 
-The declarations are statements that are describing the network topology.  
-The parameters are telling the server how to do specific things,  
-and they often have values for time, quantity, etc  
+The declarations are statements that we use to configure the topology of the network where our DHCP server resides:
+
+- subnet
+- shared-network
+- pool
+- host
+- group
 
 The configuration aspects of DHCP server revolves arround these topics:
 
--Define the network topology using subnet declarations
--Define the addresses available for dynamic allocation by using range declarations under subnet or pool
--Define other dhcp options like default-router, domain-name, domain-name-servers, mtu, netmask, broadcast
--Group subnet,pool, and host declarations under Group or Shared-Network declarations
--Identify DHCP request by using dhcp options like vendor class or client class, or other options
--Differentiate how requests are serviced by using classes, subclasses and pools
+- Define the network topology using subnet declarations
+- Define the addresses available for dynamic allocation by using range declarations under subnet or pool
+- Define other dhcp options like default-router, domain-name, domain-name-servers, mtu, netmask, broadcast
+- Group subnet, pool, and host declarations under Group or Shared-Network declarations
+- Identify DHCP request by using dhcp options like vendor class or client class, or other options
+- Differentiate how requests are serviced by using classes, subclasses and pools
 
-The basic building block is the *subnet* declaration.  
+The basic building block is the *subnet* declaration
 The subnet identifies a connected subnet for the dhcp server, so we need to have at least one subnet
 for each network interface of the server, even if we don't allocate ip addresses from each of these networks.
 
 If we want to allocate ips dynamically from a specific subnet then under that subnet declaration we need
 to have a *range* declaration with the available ips  
-You can have multiple *range* declaration under the same subnet or pool
+You can have multiple *range* declarations under the same subnet or pool.
 
-If we server more than one subnet from under a single network interface, then those subnet declarations need
+If we serve more than one subnet from under a single network interface, then those subnet declarations need
 to be enclosed under *shared-network*
 
 DHCP server will allocate ip addresses and a series of other parameters which are expressed as dhcp options.  
 
-Most of the time we use the same set of parameters for a specific subnet, and a specific subnet
-will be matched with a request either by using the gateway information, if the request is relayed, or by
-mathing the subnet with the interface where the request came in.
+### Matching a request
 
-If we want we can match the request by using other info like the hardware address, or even dhcp options that 
-are transmitted by the client.
+A dhcp request needs to be matched for options and for ip allocation and those two configuration items can be different.
+Like for example with host declaration without the fixed-address parameter, which will be used just to assign  the dhcp options,
+while for the ip allocation a pool or subnet will be looked up.
+
+The specific subnet or range will be matched either from the gateway information (if the request was relayed), or by
+matching the subnet with the interface where the request came in.
+
+For the second part we match by using classes, or just enclosing options inside conditional statements, or for host declarations
+we can match against dhcp-client-identifier, or hardware-address.
 
 A common case is using the hardware address in a *host* declaration. In this case we use a host declaration the request will be matched
 on the specified hardware ethernet address. 
 
 Going further we can enclose specific options under the host declaration.  
 The host declaration can contain also the fixed address parameters for assigning an ip address to the client,
-but is not mandatory, in which case a subnet will be used for ip allocation.  
+but is not mandatory, in which case a subnet or pool will be used for ip allocation.  
 **If we use a fixed address to allocate an ip to host, that ip should not also be listed as being available for dynamic assignment.**  
 
 Host declarations are matched to actual DHCP or BOOTP clients by matching the dhcp-client-identifier option specified in the host declaration
@@ -59,8 +72,7 @@ Host declarations are matched to actual DHCP or BOOTP clients by matching the dh
 If we have some parameters that are the same for multiple hosts we can group host declarations under Group and
 configure these parameters only once for all the group.
 
-
-The last important declaration is the pool, which can be used to differentiate multiple types of hosts under the same subnet. You configure specific options for the pool and use allow and deny statements to match clients on specific pool.  
+Another important declaration is the pool, which can be used to differentiate multiple types of clients under the same subnet. You configure specific options for the pool and use allow and deny statements to match clients on specific pool.  
 For example you can use allow knonwn-clients, which means that the pool matches only the clients that have matching host declarations in your config.
 
 *I'm not entirely sure about the correct way to place pool in the config. It seems that you can enclose pool inside the subnet declaration,  
@@ -75,7 +87,8 @@ Scopes are never considered twice, and if parameters are declared in more than o
 
 ### A quick example of dhcpd.conf structure
 
-\# Global Options
+```
+# Global Options
 option domain-name "sandbox.lab";  
 option domain-name-servers ns1.sandbox.lab, ns2.sandbox.lab;  
 
@@ -87,20 +100,20 @@ shared-network 192-168 {
 		range 192.168.0.100  192.168.0.150;  
 		option routers 192.168.0.1, 192.168.0.2;  
 		pool pool1 {  
-			range 192.168.0.200 192.168.0.210;
-			allow known-clients; 
-		  }  
+			range 192.168.0.200 192.168.0.210;  
+			allow known-clients;  
+		  	}   
 		pool pool2 {  
-			range 192.168.0.220 192.168.0.230;
-			allow members of "foo";
-
-		 }  
+			range 192.168.0.220 192.168.0.230;  
+			allow members of "foo"; 
+			 }   
+		}
 	subnet 192.168.1.0 netmask 255.255.255.0 {  
 		range 192.168.1.100  192.168.1.150;  
 		option broadcast-address 192.168.1.255;  
 		option routers 192.168.1.1;  
 		}  
-	}
+	}  
 
 host pc1 {
 	hardware ethernet 00:00:00:11:12:ab;
@@ -117,10 +130,9 @@ group {
 	}
 }  
 
-
-The group declaration is used normally to group together multiple host declarations, but you can put under it subnets, pools, and shared networks also.
-
-
+```
+*in the previous example I have used the pool statements under subnet, but I think is not a common practice.
+The place of pool statements is at the same level with the subnet*
 
 ### The DHCP Evaluation system 
 
@@ -128,12 +140,12 @@ The ISC DHCP Server, benefits from a powerfull evaluation system.
 You can use it to match on client requests directly or to match client request to specific classes or subclasses.  
 To expand on the last sentence, you can have a conditional declaration with if, and else like this:
 
-
+```
 if option dhcp-user-class = "something" {  
 	option domain-name "custom.lab"; 
 	option domain-name-servers 127.0.0.1; 
 	}  
-
+```
 
 ## Expressions that can be used in the evaluation system:
 
@@ -144,7 +156,7 @@ if option dhcp-user-class = "something" {
 - Exists - exists option-name
 - Known - returns true if the client whose request is being processed is known
 - substring (data-expr, offset, length) - this is used to extract a string from a dhcp option
-- suffix (data-expr, length) - this also extracts a string from a dhp option but only from the end
+- suffix (data-expr, length) - this also extracts a string from a dhcp option but only from the end
 - lcase (data-expr)  - transform to lowercase
 - ucase (data-expr)  - transform to uppercase
 - pick-first-value(data-expr1 [...exprn])  
@@ -163,7 +175,8 @@ First of all we need to configure the update mechanisms. We can choose between a
 
 If DNS only allows secure updates, then we also need to configure the key
 
-key DHCP\_UPDATER {  
+```
+key DHCP_UPDATER {  
 	algorithm hmac-md5;  
 	secret 03r92j09j203fj20fwe;  
 };  
@@ -178,7 +191,7 @@ zone 17.127.10.in-addr.arpa {
 	key DHCP_UPDATER;  
 }  
 
-
+```
 
 ### DHCP Classing
 
