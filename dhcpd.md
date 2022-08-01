@@ -11,7 +11,7 @@ The configuration file uses two types of statements that can be:
 - declarations
 - parameters
 
-The declarations are the ones that describe the network topology.  
+The declarations are statements that are describing the network topology.  
 The parameters are telling the server how to do specific things,  
 and they often have values for time, quantity, etc  
 
