@@ -24,16 +24,6 @@ ddns-update-style interim;
 allow client-updates;
 
 
-# Options that usualy work with host declaration
-
-#option host-name "mypc";
-#option dhcp-client-identifier "pc_id";
-#next-server 192.168.1.1;
-#filename "boot.gz";
-#fixed-address 192.168.1.10;
-#hardware ethernet 11:22:33:12:23:34;
-
-
 
 # Simple subnet
 	subnet 192.168.40.0 netmask 255.255.255.0 {

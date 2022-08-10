@@ -1,3 +1,4 @@
+# MULTIPLE POOLS DHCP CONFIG
 #Generic options not specially related to a network, subnet or pool
 
 default-lease-time 600;
@@ -24,10 +25,14 @@ option ntp-servers 0.pool.ntp.org, 1.pool.ntp.org;
 ddns-update-style interim;
 allow client-updates;
 
-# Custom Option Definition
+# Multiple Pools
+# The pools might have different subnets configured under range, which means that your
+# DHCP server leases IPs to more than one subnet.
+# If all those subnets are connected to the same interface of our DHCP server that means
+# that we have to use the shared-network statement. I am not sure about this but I think
+# there needs to be a subnet statement for all of the subnets, even if they appear one way 
+# or another under pool declarations
 
-#option sql-server-address code 193 = ip-address;
-#option sql-server-address sql.example.com;
 
 
 	shared-network pooled_networks {
@@ -42,6 +47,9 @@ allow client-updates;
 			option interface-mtu 1500;
 			option ip-forwarding true;
 			option domain-search "packets.lab", "boxes.lab";
+		}
+		
+		subnet 10.10.2.0 netmask 255.255.255.0 {
 		}
 
 		pool bulk_clients {
